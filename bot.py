@@ -7,8 +7,6 @@ from myserver import server_on
 
 bot = commands.Bot(command_prefix='./' , intents=discord.Intents.all())
 
-os.environ["TOKEN"] = 'MTI5Mzg4NjM2ODc0NDg2OTkzOQ.GeeEcH.hPGgwZl4nVe122J_mHQCI7F1vUPA7RpL0iEGZc'
-
 #Bot Event
 @bot.event
 async def on_ready():
