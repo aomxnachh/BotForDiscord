@@ -1,0 +1,5 @@
+# Ignore all image files inside the image folder
+BotForDiscord/image/*
+
+# But allow the .gitkeep file to ensure the folder is tracked
+!BotForDiscord/image/.gitkeep
