@@ -44,19 +44,32 @@ async def hello(ctx):
 
 #meme
 @bot.command()
-async def meme(ctx):
+async def meme(ctx, number_of_memes: int = 1):
+    # Directory where images are stored
     image_folder = "image/"
+
     images = os.listdir(image_folder)
-    images = [img for img in images if img.endswith(('.png', '.jpg', '.jpeg', '.gif', '.mov'))]
+
+    images = [img for img in images if img.endswith(('.png', '.jpg', '.jpeg', '.gif'))]
+
     if not images:
         await ctx.channel.send("No images found in the folder.")
         return
-    selected_image = random.choice(images)
-    image_path = os.path.join(image_folder, selected_image)
-    file = discord.File(image_path, filename=selected_image)
-    embed = discord.Embed(title="Meme!", color=0x66FFFF)
-    embed.set_image(url=f"attachment://{selected_image}")
-    await ctx.channel.send(embed=embed, file=file)
+
+    if number_of_memes < 1:
+        await ctx.channel.send("The number of memes must be at least 1.")
+        return
+    elif number_of_memes > 5:
+        await ctx.channel.send("You can't request more than 5 memes.")
+        return
+    selected_images = random.sample(images, k=min(number_of_memes, len(images)))
+
+    for selected_image in selected_images:
+        image_path = os.path.join(image_folder, selected_image)
+        file = discord.File(image_path, filename=selected_image)
+        embed = discord.Embed(title="Meme!", color=0x66FFFF)
+        embed.set_image(url=f"attachment://{selected_image}")
+        await ctx.channel.send(embed=embed, file=file)
 
 server_on()
 
