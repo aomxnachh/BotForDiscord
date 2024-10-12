@@ -45,7 +45,6 @@ async def hello(ctx):
 #meme
 @bot.command()
 async def meme(ctx, number_of_memes: int = 1):
-    # Directory where images are stored
     image_folder = "image/"
 
     images = os.listdir(image_folder)
