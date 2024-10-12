@@ -15,20 +15,23 @@ async def on_ready():
 #who enter or out
 @bot.event
 async def on_member_join(member):
-    channel = bot.get_channel(1293939779976695901)
-    text = f"Welcome to the island, {member.mention}!"
-    #Embed
-    emmbed = discord.Embed(title = 'Welcome to the island!!!',
-                            descipton = text,
-                            color = 0x66FFFF)
-    await channel.send(text)
-    await channel.send(embed = emmbed)
+    channel = member.guild.system_channel
+    if channel is not None:
+        text = f"Welcome to the island, {member.mention}!"
+        # Embed
+        embed = discord.Embed(title='Welcome to the island!!!',
+                              description=text,
+                              color=0x66FFFF)
+        await channel.send(text)
+        await channel.send(embed=embed)
 
+# When a member leaves
 @bot.event
-async def  on_member_remove(member):
-    channel = bot.get_channel(1293939779976695901)
-    text = f"Goodbye, {member.mention} Skibidi"
-    await channel.send(text)
+async def on_member_remove(member):
+    channel = member.guild.system_channel
+    if channel is not None:
+        text = f"Goodbye, {member.mention}! Skibidi"
+        await channel.send(text)
 
 #hello
 @bot.command()
