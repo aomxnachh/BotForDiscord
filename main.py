@@ -47,7 +47,7 @@ async def hello(ctx):
 async def meme(ctx):
     image_folder = "image/"
     images = os.listdir(image_folder)
-    images = [img for img in images if img.endswith(('.png', '.jpg', '.jpeg', '.gif'))]
+    images = [img for img in images if img.endswith(('.png', '.jpg', '.jpeg', '.gif', '.mov'))]
     if not images:
         await ctx.channel.send("No images found in the folder.")
         return
