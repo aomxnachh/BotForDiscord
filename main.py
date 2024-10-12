@@ -70,6 +70,13 @@ async def meme(ctx, number_of_memes: int = 1):
         embed.set_image(url=f"attachment://{selected_image}")
         await ctx.channel.send(embed=embed, file=file)
 
+@bot.commands()
+async def help(ctx):
+    text = "./hello :for hello you\n ./meme :for random cs kmitl meme"
+    embed = discord.Embed(title='commands:\n', description=text,color=0x66FFFF)
+    await ctx.channel.send(embed=embed)
+
+
 server_on()
 
 bot.run(os.getenv('TOKEN'))
