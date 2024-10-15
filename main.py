@@ -1,7 +1,7 @@
 import discord
 import random
 import os
-import youtube_dl
+from pytube import YouTube
 import asyncio
 from discord.ext import commands
 
@@ -36,7 +36,7 @@ async def on_member_remove(member):
         text = f"Goodbye, {member.mention}! Skibidi"
         await channel.send(text)
 
-#section hello
+#hello section
 @bot.command()
 async def hello(ctx):
     text = f"KoKo Sawasdee {ctx.author.mention} Kub Jub Jub"
@@ -45,15 +45,12 @@ async def hello(ctx):
     embed.set_image(url="attachment://Kokosawasdee.jpg")
     await ctx.channel.send(embed=embed, file=file)
 
-#section meme
+#meme section
 @bot.command()
 async def meme(ctx, number_of_memes: int = 1):
     image_folder = "image/"
-
     images = os.listdir(image_folder)
-
     images = [img for img in images if img.endswith(('.png', '.jpg', '.jpeg', '.gif'))]
-
     if not images:
         await ctx.channel.send("No images found in the folder.")
         return
@@ -73,35 +70,25 @@ async def meme(ctx, number_of_memes: int = 1):
         embed.set_image(url=f"attachment://{selected_image}")
         await ctx.channel.send(embed=embed, file=file)
 
-#section coin flip
+#coin section
 @bot.command()
-async def coin(ctx,ip):
-    ip=ip.lower()
-    num = random.randint(1,2)
+async def coin(ctx, ip):
+    ip = ip.lower()
+    num = random.randint(1, 2)
     if num == 1 and ip == "head":
-        Head = discord.Embed(title="Correct,It Head!!!",color=0x80ff00)
+        Head = discord.Embed(title="Correct, It’s Head!!!", color=0x80ff00)
         await ctx.send(embed=Head)
     elif num == 2 and ip == "tail":
-        Tail = discord.Embed(title="Correct,It Tail!!!",color=0x80ff00)
+        Tail = discord.Embed(title="Correct, It’s Tail!!!", color=0x80ff00)
         await ctx.send(embed=Tail)
     else:
-        Wrong = discord.Embed(title="It wrong are you smart?",color=0x80ff00)
+        Wrong = discord.Embed(title="It’s wrong! Are you smart?", color=0x80ff00)
         await ctx.send(embed=Wrong)
 
-
-#section help
-@bot.command()
-async def help(ctx):
-    embed = discord.Embed(title="Help",color=0x80ff00)
-    embed.add_field(name="./hello",value="to greet you",inline=False)
-    embed.add_field(name="./meme",value="to generate meme of cs",inline=False)
-    embed.add_field(name="./coin",value="to guess flip coin",inline=False)
-    await ctx.send(embed=embed)
-
-#section music
+#music section
 queue = []
 
-#func to check
+#check bot
 def is_connected(ctx):
     return ctx.voice_client is not None
 
@@ -113,23 +100,20 @@ async def play_next_song(ctx):
     else:
         await ctx.voice_client.disconnect()
 
-#func to play a song
+#func to play music
 async def play_song(ctx, url):
-    ydl_opts = {
-        'format': 'bestaudio',
-        'noplaylist': 'True'
-    }
-    with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(url, download=False)
-        url2 = info['formats'][0]['url']
+    vc = ctx.voice_client
+    yt = YouTube(url)
+    audio_stream = yt.streams.filter(only_audio=True).first().url
+
     ffmpeg_opts = {
         'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
         'options': '-vn'
     }
-    vc = ctx.voice_client
-    vc.play(discord.FFmpegPCMAudio(url2, **ffmpeg_opts), after=lambda e: asyncio.run_coroutine_threadsafe(play_next_song(ctx), bot.loop))
+    vc.play(discord.FFmpegPCMAudio(audio_stream, **ffmpeg_opts),
+            after=lambda e: asyncio.run_coroutine_threadsafe(play_next_song(ctx), bot.loop))
 
-#join voice channel and play song
+#join voice
 @bot.command()
 async def p(ctx, url):
     if not ctx.author.voice:
@@ -155,14 +139,14 @@ async def skip(ctx):
     ctx.voice_client.stop()
     await ctx.send("Skipped the song!")
 
-#stop playing music
+#stop playing
 @bot.command()
 async def stop(ctx):
     if not is_connected(ctx):
         await ctx.send("I am not in a voice channel.")
         return
 
-    queue.clear()#clear queue
+    queue.clear() #clear the queue
     await ctx.send("Stopping and leaving the voice channel.")
     await ctx.voice_client.disconnect()
 
@@ -172,6 +156,15 @@ async def on_voice_state_update(member, before, after):
     if before.channel is not None and after.channel is None:
         if member == bot.user:
             await member.guild.voice_client.disconnect()
+
+#help section
+@bot.command()
+async def help(ctx):
+    embed = discord.Embed(title="Help", color=0x80ff00)
+    embed.add_field(name="./hello", value="to greet you", inline=False)
+    embed.add_field(name="./meme", value="to generate meme of cs", inline=False)
+    embed.add_field(name="./coin", value="to guess flip coin", inline=False)
+    await ctx.send(embed=embed)
 
 server_on()
 
