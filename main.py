@@ -73,13 +73,17 @@ async def meme(ctx, number_of_memes: int = 1):
 #coin flip
 @bot.command()
 async def coin(ctx,ip):
+    ip.lower()
     num = random.randint(1,2)
-    if num == 1 and ip == "Head":
+    if num == 1 and ip == "head":
         Head = discord.Embed(title="Correct,It Head!!!",color=0x80ff00)
-    elif num == 2 and ip == "Tail":
+        await ctx.send(embed=Head)
+    elif num == 2 and ip == "tail":
         Tail = discord.Embed(title="Correct,It Tail!!!",color=0x80ff00)
+        await ctx.send(embed=Tail)
     else:
         Wrong = discord.Embed(title="It wrong are you smart?",color=0x80ff00)
+        await ctx.send(embed=Wrong)
 server_on()
 
 bot.run(os.getenv('TOKEN'))
