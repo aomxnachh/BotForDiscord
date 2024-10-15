@@ -6,6 +6,7 @@ from discord.ext import commands
 from myserver import server_on
 
 bot = commands.Bot(command_prefix='./' , intents=discord.Intents.all())
+bot.remove_command("help")
 
 #Bot Event
 @bot.event
@@ -84,6 +85,17 @@ async def coin(ctx,ip):
     else:
         Wrong = discord.Embed(title="It wrong are you smart?",color=0x80ff00)
         await ctx.send(embed=Wrong)
+
+
+#help
+@bot.command()
+async def help(ctx):
+    embed = discord.Embed(title="Help",color=0x80ff00)
+    embed.add_field(name="./hello",value="to greet you",inline=False)
+    embed.add_field(name="./meme",value="to generate meme of cs",inline=False)
+    embed.add_field(name="./coin",value="to guess flip coin",inline=False)
+    await ctx.send(embed=embed)
+
 server_on()
 
 bot.run(os.getenv('TOKEN'))
