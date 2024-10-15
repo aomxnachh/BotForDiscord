@@ -1,7 +1,7 @@
 import discord
 import random
 import os
-from pytube import YouTube
+import youtube_dl
 import asyncio
 from discord.ext import commands
 
@@ -92,7 +92,7 @@ queue = []
 def is_connected(ctx):
     return ctx.voice_client is not None
 
-#func to play next queue
+#func play next queue
 async def play_next_song(ctx):
     if len(queue) > 0:
         url = queue.pop(0)
@@ -100,18 +100,21 @@ async def play_next_song(ctx):
     else:
         await ctx.voice_client.disconnect()
 
-#func to play music
+#func to play song
 async def play_song(ctx, url):
-    vc = ctx.voice_client
-    yt = YouTube(url)
-    audio_stream = yt.streams.filter(only_audio=True).first().url
-
+    ydl_opts = {
+        'format': 'bestaudio',
+        'noplaylist': 'True'
+    }
+    with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+        info = ydl.extract_info(url, download=False)
+        url2 = info['formats'][0]['url']
     ffmpeg_opts = {
         'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
         'options': '-vn'
     }
-    vc.play(discord.FFmpegPCMAudio(audio_stream, **ffmpeg_opts),
-            after=lambda e: asyncio.run_coroutine_threadsafe(play_next_song(ctx), bot.loop))
+    vc = ctx.voice_client
+    vc.play(discord.FFmpegPCMAudio(url2, **ffmpeg_opts), after=lambda e: asyncio.run_coroutine_threadsafe(play_next_song(ctx), bot.loop))
 
 #join voice
 @bot.command()
@@ -139,32 +142,22 @@ async def skip(ctx):
     ctx.voice_client.stop()
     await ctx.send("Skipped the song!")
 
-#stop playing
+#stop
 @bot.command()
 async def stop(ctx):
     if not is_connected(ctx):
         await ctx.send("I am not in a voice channel.")
         return
-
-    queue.clear() #clear the queue
+    queue.clear()  #clear the queue
     await ctx.send("Stopping and leaving the voice channel.")
     await ctx.voice_client.disconnect()
 
-#bot leave
+#discon
 @bot.event
 async def on_voice_state_update(member, before, after):
     if before.channel is not None and after.channel is None:
         if member == bot.user:
             await member.guild.voice_client.disconnect()
-
-#help section
-@bot.command()
-async def help(ctx):
-    embed = discord.Embed(title="Help", color=0x80ff00)
-    embed.add_field(name="./hello", value="to greet you", inline=False)
-    embed.add_field(name="./meme", value="to generate meme of cs", inline=False)
-    embed.add_field(name="./coin", value="to guess flip coin", inline=False)
-    await ctx.send(embed=embed)
 
 server_on()
 
