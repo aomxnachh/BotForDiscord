@@ -77,7 +77,7 @@ async def coin(ctx,ip):
     if num == 1 and ip == "Head":
         await ctx.send("Head Correct!!!")
     elif num == 2 and ip == "Tail":
-        await ctx.send("Tail")
+        await ctx.send("Tail Correct!!!")
     else:
         await ctx.send("Wrong!!!")
 server_on()
