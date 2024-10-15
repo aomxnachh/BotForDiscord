@@ -73,7 +73,7 @@ async def meme(ctx, number_of_memes: int = 1):
 #coin flip
 @bot.command()
 async def coin(ctx,ip):
-    ip.lower()
+    ip=ip.lower()
     num = random.randint(1,2)
     if num == 1 and ip == "head":
         Head = discord.Embed(title="Correct,It Head!!!",color=0x80ff00)
