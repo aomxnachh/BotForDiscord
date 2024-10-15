@@ -75,9 +75,9 @@ async def meme(ctx, number_of_memes: int = 1):
 async def coin(ctx,ip):
     num = random.randint(1,2)
     if num == 1 and ip == "Head":
-        await ctx.send("Head Correct!!!")
+        Head = discord.Embed(title="Correct,It Head!!!",color=0x80ff00)
     elif num == 2 and ip == "Tail":
-        await ctx.send("Tail Correct!!!")
+        Tail = discord.Embed(title="Correct,It Tail!!!",color=0x80ff00)
     else:
         await ctx.send("Wrong!!!")
 server_on()
