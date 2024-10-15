@@ -79,7 +79,7 @@ async def coin(ctx,ip):
     elif num == 2 and ip == "Tail":
         Tail = discord.Embed(title="Correct,It Tail!!!",color=0x80ff00)
     else:
-        await ctx.send("Wrong!!!")
+        Wrong = discord.Embed(title="It wrong are you smart?",color=0x80ff00)
 server_on()
 
 bot.run(os.getenv('TOKEN'))
