@@ -1,6 +1,8 @@
 import discord
 import random
 import os
+import youtube_dl
+import asyncio
 from discord.ext import commands
 
 from myserver import server_on
@@ -26,7 +28,7 @@ async def on_member_join(member):
         await channel.send(text)
         await channel.send(embed=embed)
 
-# When a member leaves
+#when a member leaves
 @bot.event
 async def on_member_remove(member):
     channel = member.guild.system_channel
@@ -34,7 +36,7 @@ async def on_member_remove(member):
         text = f"Goodbye, {member.mention}! Skibidi"
         await channel.send(text)
 
-#hello
+#section hello
 @bot.command()
 async def hello(ctx):
     text = f"KoKo Sawasdee {ctx.author.mention} Kub Jub Jub"
@@ -43,7 +45,7 @@ async def hello(ctx):
     embed.set_image(url="attachment://Kokosawasdee.jpg")
     await ctx.channel.send(embed=embed, file=file)
 
-#meme
+#section meme
 @bot.command()
 async def meme(ctx, number_of_memes: int = 1):
     image_folder = "image/"
@@ -71,7 +73,7 @@ async def meme(ctx, number_of_memes: int = 1):
         embed.set_image(url=f"attachment://{selected_image}")
         await ctx.channel.send(embed=embed, file=file)
 
-#coin flip
+#section coin flip
 @bot.command()
 async def coin(ctx,ip):
     ip=ip.lower()
@@ -87,7 +89,7 @@ async def coin(ctx,ip):
         await ctx.send(embed=Wrong)
 
 
-#help
+#section help
 @bot.command()
 async def help(ctx):
     embed = discord.Embed(title="Help",color=0x80ff00)
@@ -95,6 +97,81 @@ async def help(ctx):
     embed.add_field(name="./meme",value="to generate meme of cs",inline=False)
     embed.add_field(name="./coin",value="to guess flip coin",inline=False)
     await ctx.send(embed=embed)
+
+#section music
+queue = []
+
+#func to check
+def is_connected(ctx):
+    return ctx.voice_client is not None
+
+#func to play next queue
+async def play_next_song(ctx):
+    if len(queue) > 0:
+        url = queue.pop(0)
+        await play_song(ctx, url)
+    else:
+        await ctx.voice_client.disconnect()
+
+#func to play a song
+async def play_song(ctx, url):
+    ydl_opts = {
+        'format': 'bestaudio',
+        'noplaylist': 'True'
+    }
+    with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+        info = ydl.extract_info(url, download=False)
+        url2 = info['formats'][0]['url']
+    ffmpeg_opts = {
+        'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
+        'options': '-vn'
+    }
+    vc = ctx.voice_client
+    vc.play(discord.FFmpegPCMAudio(url2, **ffmpeg_opts), after=lambda e: asyncio.run_coroutine_threadsafe(play_next_song(ctx), bot.loop))
+
+#join voice channel and play song
+@bot.command()
+async def p(ctx, url):
+    if not ctx.author.voice:
+        await ctx.send("You are not connected to a voice channel.")
+        return
+    channel = ctx.author.voice.channel
+    if not is_connected(ctx):
+        await channel.connect()
+    queue.append(url)
+    await ctx.send(f"Added to queue: {url}")
+    if not ctx.voice_client.is_playing():
+        await play_next_song(ctx)
+
+#skip the current song
+@bot.command()
+async def skip(ctx):
+    if not is_connected(ctx):
+        await ctx.send("I am not in a voice channel.")
+        return
+    if not ctx.voice_client.is_playing():
+        await ctx.send("There is no song playing right now.")
+        return
+    ctx.voice_client.stop()
+    await ctx.send("Skipped the song!")
+
+#stop playing music
+@bot.command()
+async def stop(ctx):
+    if not is_connected(ctx):
+        await ctx.send("I am not in a voice channel.")
+        return
+
+    queue.clear()#clear queue
+    await ctx.send("Stopping and leaving the voice channel.")
+    await ctx.voice_client.disconnect()
+
+#bot leave
+@bot.event
+async def on_voice_state_update(member, before, after):
+    if before.channel is not None and after.channel is None:
+        if member == bot.user:
+            await member.guild.voice_client.disconnect()
 
 server_on()
 
