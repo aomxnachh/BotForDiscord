@@ -5,7 +5,7 @@ from discord.ext import commands
 
 from myserver import server_on
 
-bot = commands.Bot(command_prefix='./')
+bot = commands.Bot(command_prefix='./' , intents=discord.Intents.all())
 bot.remove_command("help")
 
 #Bot Event
