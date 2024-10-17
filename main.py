@@ -1,9 +1,6 @@
 import discord
 import random
 import os
-import youtube_dl
-import asyncio
-import re
 from discord.ext import commands
 
 from myserver import server_on
@@ -82,109 +79,6 @@ async def coin(ctx, ip):
     else:
         Wrong = discord.Embed(title="It’s wrong! Are you smart?", color=0x80ff00)
         await ctx.send(embed=Wrong)
-
-# music section
-queue = []
-
-# check bot connection
-def is_connected(ctx):
-    return ctx.voice_client is not None
-
-# function to play next song in queue
-async def play_next_song(ctx):
-    if len(queue) > 0:
-        url = queue.pop(0)
-        await play_song(ctx, url)
-    else:
-        await ctx.voice_client.disconnect()
-
-# function to play song using cookies for authentication
-async def play_song(ctx, url):
-    ydl_opts = {
-        'format': 'bestaudio',
-        'noplaylist': 'True',
-        'cookiefile': 'cookies.txt',  # Path to your cookies file
-    }
-    
-    # Download song info from YouTube
-    with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(url, download=False)
-        url2 = info['formats'][0]['url']
-    
-    ffmpeg_opts = {
-        'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
-        'options': '-vn'
-    }
-    
-    # Get the title of the song for the bot to "speak"
-    title = info.get('title', 'Unknown Title')
-    
-    # Announce the song title (let the bot "speak")
-    vc = ctx.voice_client
-    tts_message = f"Now playing: {title}"
-    await ctx.send(tts_message)  # Sends text message in the channel
-    await ctx.send(tts_message, tts=True)  # Makes the bot "speak"
-
-    # Play the song in the voice channel
-    vc.play(discord.FFmpegPCMAudio(url2, **ffmpeg_opts), after=lambda e: asyncio.run_coroutine_threadsafe(play_next_song(ctx), bot.loop))
-
-# Helper function to validate YouTube URL
-def is_youtube_url(url):
-    youtube_regex = re.compile(
-        r'(https?://)?(www\.)?(youtube|youtu|youtube-nocookie)\.(com|be)/'
-        r'(watch\?v=|embed/|v/|.+\?v=)?([^&=%\?]{11})')
-    return youtube_regex.match(url)
-
-# join voice and play song immediately
-@bot.command()
-async def p(ctx, url):
-    if not is_youtube_url(url):
-        await ctx.send("Please provide a valid YouTube URL.")
-        return
-
-    if not ctx.author.voice:
-        await ctx.send("You are not connected to a voice channel.")
-        return
-
-    channel = ctx.author.voice.channel
-    if not is_connected(ctx):
-        await channel.connect()
-
-    # If queue is empty, play the song immediately
-    if len(queue) == 0 and not ctx.voice_client.is_playing():
-        await play_song(ctx, url)
-    else:
-        queue.append(url)  # Add to queue
-        await ctx.send(f"Added to queue: {url}")
-
-# skip the current song
-@bot.command()
-async def skip(ctx):
-    if not is_connected(ctx):
-        await ctx.send("I am not in a voice channel.")
-        return
-    if not ctx.voice_client.is_playing():
-        await ctx.send("There is no song playing right now.")
-        return
-    ctx.voice_client.stop()
-    await ctx.send("Skipped the song!")
-
-# stop and disconnect
-@bot.command()
-async def stop(ctx):
-    if not is_connected(ctx):
-        await ctx.send("I am not in a voice channel.")
-        return
-    queue.clear()  # Clear the queue
-    await ctx.send("Stopping and leaving the voice channel.")
-    await ctx.voice_client.disconnect()
-
-# auto disconnect when bot leaves voice
-@bot.event
-async def on_voice_state_update(member, before, after):
-    if before.channel is not None and after.channel is None:
-        if member == bot.user:
-            await member.guild.voice_client.disconnect()
 
 server_on()
 
