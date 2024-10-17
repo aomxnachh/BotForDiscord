@@ -8,28 +8,25 @@ from discord.ext import commands
 
 from myserver import server_on
 
-bot = commands.Bot(command_prefix='./' , intents=discord.Intents.all())
+bot = commands.Bot(command_prefix='./', intents=discord.Intents.all())
 bot.remove_command("help")
 
-#Bot Event
+# Bot Event
 @bot.event
 async def on_ready():
     print("KoKo is awake!!!")
 
-#who enter or out
+# who enter or out
 @bot.event
 async def on_member_join(member):
     channel = member.guild.system_channel
     if channel is not None:
         text = f"Welcome to the island, {member.mention}!"
-        # Embed
-        embed = discord.Embed(title='Welcome to the island!!!',
-                              description=text,
-                              color=0x66FFFF)
+        embed = discord.Embed(title='Welcome to the island!!!', description=text, color=0x66FFFF)
         await channel.send(text)
         await channel.send(embed=embed)
 
-#when a member leaves
+# when a member leaves
 @bot.event
 async def on_member_remove(member):
     channel = member.guild.system_channel
@@ -37,7 +34,7 @@ async def on_member_remove(member):
         text = f"Goodbye, {member.mention}! Skibidi"
         await channel.send(text)
 
-#hello section
+# hello section
 @bot.command()
 async def hello(ctx):
     text = f"KoKo Sawasdee {ctx.author.mention} Kub Jub Jub"
@@ -46,7 +43,7 @@ async def hello(ctx):
     embed.set_image(url="attachment://Kokosawasdee.jpg")
     await ctx.channel.send(embed=embed, file=file)
 
-#meme section
+# meme section
 @bot.command()
 async def meme(ctx, number_of_memes: int = 1):
     image_folder = "image/"
@@ -71,7 +68,7 @@ async def meme(ctx, number_of_memes: int = 1):
         embed.set_image(url=f"attachment://{selected_image}")
         await ctx.channel.send(embed=embed, file=file)
 
-#coin section
+# coin section
 @bot.command()
 async def coin(ctx, ip):
     ip = ip.lower()
@@ -86,7 +83,7 @@ async def coin(ctx, ip):
         Wrong = discord.Embed(title="It’s wrong! Are you smart?", color=0x80ff00)
         await ctx.send(embed=Wrong)
 
-#music section
+# music section
 queue = []
 
 # check bot connection
@@ -145,12 +142,12 @@ async def p(ctx, url):
     if not is_connected(ctx):
         await channel.connect()
 
-    queue.append(url)  # Add to queue
-    await ctx.send(f"Added to queue: {url}")
-
-    # Play the song if not already playing
-    if not ctx.voice_client.is_playing():
-        await play_next_song(ctx)
+    # If queue is empty, play the song immediately
+    if len(queue) == 0 and not ctx.voice_client.is_playing():
+        await play_song(ctx, url)
+    else:
+        queue.append(url)  # Add to queue
+        await ctx.send(f"Added to queue: {url}")
 
 # skip the current song
 @bot.command()
