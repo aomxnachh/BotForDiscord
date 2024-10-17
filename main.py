@@ -1,6 +1,7 @@
 import discord
 import random
 import os
+import youtube_dl
 from discord.ext import commands
 
 from myserver import server_on
@@ -79,6 +80,76 @@ async def coin(ctx, ip):
     else:
         Wrong = discord.Embed(title="It’s wrong! Are you smart?", color=0x80ff00)
         await ctx.send(embed=Wrong)
+
+#music section
+queues = {}
+
+@bot.command()
+async def p(ctx, url: str):
+    if "youtube.com" not in url and "youtu.be" not in url:
+        await ctx.send("Please provide a valid YouTube URL.")
+        return
+
+    voice_channel = ctx.author.voice.channel
+    if voice_channel is None:
+        await ctx.send("You need to be in a voice channel to play music.")
+        return
+
+    voice_client = await connect_to_channel(ctx, voice_channel)
+    
+    # Add the song to the queue
+    if ctx.guild.id not in queues:
+        queues[ctx.guild.id] = []
+    
+    if not voice_client.is_playing():
+        await play_song(ctx, url)
+    else:
+        queues[ctx.guild.id].append(url)
+        await ctx.send("Added to queue.")
+
+# Skip the current song
+@bot.command()
+async def skip(ctx):
+    voice_client = ctx.guild.voice_client
+    if voice_client is not None and voice_client.is_playing():
+        voice_client.stop()  # Stop the current song, automatically moves to next in queue
+
+# Stop and clear the queue
+@bot.command()
+async def stop(ctx):
+    voice_client = ctx.guild.voice_client
+    if voice_client is not None:
+        queues[ctx.guild.id] = []  # Clear the queue
+        await voice_client.disconnect()  # Disconnect from the voice channel
+
+async def connect_to_channel(ctx, voice_channel):
+    voice_client = ctx.guild.voice_client
+    if voice_client is None:
+        voice_client = await voice_channel.connect()
+    elif voice_client.channel != voice_channel:
+        await voice_client.move_to(voice_channel)
+    return voice_client
+
+async def play_song(ctx, url):
+    voice_client = ctx.guild.voice_client
+    if voice_client is None:
+        await ctx.send("I'm not in a voice channel.")
+        return
+
+    with youtube_dl.YoutubeDL({'format': 'bestaudio', 'noplaylist': 'True'}) as ydl:
+        info = ydl.extract_info(url, download=False)
+        URL = info['formats'][0]['url']
+
+    voice_client.play(discord.FFmpegPCMAudio(executable="ffmpeg", source=URL), after=lambda e: check_queue(ctx))
+
+async def check_queue(ctx):
+    if queues[ctx.guild.id]:
+        next_song = queues[ctx.guild.id].pop(0)  # Get the next song from the queue
+        await play_song(ctx, next_song)
+    else:
+        voice_client = ctx.guild.voice_client
+        if voice_client is not None:
+            await voice_client.disconnect()  # Disconnect if the queue is empty
 
 server_on()
 
