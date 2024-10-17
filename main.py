@@ -116,8 +116,16 @@ async def play_song(ctx, url):
         'options': '-vn'
     }
     
-    # Play the song in the voice channel
+    # Get the title of the song for the bot to "speak"
+    title = info.get('title', 'Unknown Title')
+    
+    # Announce the song title (let the bot "speak")
     vc = ctx.voice_client
+    tts_message = f"Now playing: {title}"
+    await ctx.send(tts_message)  # Sends text message in the channel
+    await ctx.send(tts_message, tts=True)  # Makes the bot "speak"
+
+    # Play the song in the voice channel
     vc.play(discord.FFmpegPCMAudio(url2, **ffmpeg_opts), after=lambda e: asyncio.run_coroutine_threadsafe(play_next_song(ctx), bot.loop))
 
 # Helper function to validate YouTube URL
