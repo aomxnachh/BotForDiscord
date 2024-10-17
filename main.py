@@ -87,13 +87,17 @@ async def coin(ctx, ip):
         await ctx.send(embed=Wrong)
 
 #music section
-queue = []
+intents = discord.Intents.default()
+intents.voice_states = True
+bot = commands.Bot(command_prefix='!', intents=intents)
 
-# check bot connection
+queue = []  # Queue to hold the song URLs
+
+# Check if the bot is connected to a voice channel
 def is_connected(ctx):
     return ctx.voice_client is not None
 
-# function to play next song in queue
+# Function to play the next song in the queue
 async def play_next_song(ctx):
     if len(queue) > 0:
         url = queue.pop(0)
@@ -101,19 +105,21 @@ async def play_next_song(ctx):
     else:
         await ctx.voice_client.disconnect()
 
-# function to play song
+# Function to play a song
 async def play_song(ctx, url):
     ydl_opts = {
         'format': 'bestaudio',
         'noplaylist': 'True'
     }
-    with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(url, download=False)
-        url2 = info['formats'][0]['url']
     ffmpeg_opts = {
         'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
         'options': '-vn'
     }
+
+    with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+        info = ydl.extract_info(url, download=False)
+        url2 = info['formats'][0]['url']
+
     vc = ctx.voice_client
     vc.play(discord.FFmpegPCMAudio(url2, **ffmpeg_opts), after=lambda e: asyncio.run_coroutine_threadsafe(play_next_song(ctx), bot.loop))
 
@@ -124,7 +130,7 @@ def is_youtube_url(url):
         r'(watch\?v=|embed/|v/|.+\?v=)?([^&=%\?]{11})')
     return youtube_regex.match(url)
 
-# join voice and play song immediately
+# Join voice and play song immediately
 @bot.command()
 async def p(ctx, url):
     if not is_youtube_url(url):
@@ -146,7 +152,7 @@ async def p(ctx, url):
     if not ctx.voice_client.is_playing():
         await play_next_song(ctx)
 
-# skip the current song
+# Skip the current song
 @bot.command()
 async def skip(ctx):
     if not is_connected(ctx):
@@ -158,7 +164,7 @@ async def skip(ctx):
     ctx.voice_client.stop()
     await ctx.send("Skipped the song!")
 
-# stop and disconnect
+# Stop the bot and disconnect from the voice channel
 @bot.command()
 async def stop(ctx):
     if not is_connected(ctx):
@@ -168,7 +174,7 @@ async def stop(ctx):
     await ctx.send("Stopping and leaving the voice channel.")
     await ctx.voice_client.disconnect()
 
-# auto disconnect when bot leaves voice
+# Auto-disconnect when bot leaves voice
 @bot.event
 async def on_voice_state_update(member, before, after):
     if before.channel is not None and after.channel is None:
