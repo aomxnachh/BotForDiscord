@@ -7,8 +7,9 @@ import re
 from discord.ext import commands
 
 from myserver import server_on
-
-bot = commands.Bot(command_prefix='./' , intents=discord.Intents.all())
+intents = discord.Intents.default()
+bot = commands.Bot(command_prefix='./',intents=intents)
+intents.voice_states = True
 bot.remove_command("help")
 
 #Bot Event
@@ -87,10 +88,6 @@ async def coin(ctx, ip):
         await ctx.send(embed=Wrong)
 
 #music section
-intents = discord.Intents.default()
-intents.voice_states = True
-bot = commands.Bot(command_prefix='!', intents=intents)
-
 queue = []  # Queue to hold the song URLs
 
 # Check if the bot is connected to a voice channel
