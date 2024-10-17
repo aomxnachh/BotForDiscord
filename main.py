@@ -1,36 +1,31 @@
 import discord
 import random
 import os
-import youtube_dl
+import yt_dlp as youtube_dl
 import asyncio
 import re
 from discord.ext import commands
 
 from myserver import server_on
-intents = discord.Intents.default()
-bot = commands.Bot(command_prefix='./',intents=intents)
-intents.voice_states = True
+
+bot = commands.Bot(command_prefix='./', intents=discord.Intents.all())
 bot.remove_command("help")
 
-#Bot Event
+# Bot Event
 @bot.event
 async def on_ready():
     print("KoKo is awake!!!")
 
-#who enter or out
+# who enters or leaves
 @bot.event
 async def on_member_join(member):
     channel = member.guild.system_channel
     if channel is not None:
         text = f"Welcome to the island, {member.mention}!"
-        # Embed
-        embed = discord.Embed(title='Welcome to the island!!!',
-                              description=text,
-                              color=0x66FFFF)
+        embed = discord.Embed(title='Welcome to the island!!!', description=text, color=0x66FFFF)
         await channel.send(text)
         await channel.send(embed=embed)
 
-#when a member leaves
 @bot.event
 async def on_member_remove(member):
     channel = member.guild.system_channel
@@ -38,7 +33,7 @@ async def on_member_remove(member):
         text = f"Goodbye, {member.mention}! Skibidi"
         await channel.send(text)
 
-#hello section
+# Hello section
 @bot.command()
 async def hello(ctx):
     text = f"KoKo Sawasdee {ctx.author.mention} Kub Jub Jub"
@@ -47,12 +42,13 @@ async def hello(ctx):
     embed.set_image(url="attachment://Kokosawasdee.jpg")
     await ctx.channel.send(embed=embed, file=file)
 
-#meme section
+# Meme section
 @bot.command()
 async def meme(ctx, number_of_memes: int = 1):
     image_folder = "image/"
     images = os.listdir(image_folder)
     images = [img for img in images if img.endswith(('.png', '.jpg', '.jpeg', '.gif'))]
+    
     if not images:
         await ctx.channel.send("No images found in the folder.")
         return
@@ -63,6 +59,7 @@ async def meme(ctx, number_of_memes: int = 1):
     elif number_of_memes > 5:
         await ctx.channel.send("You can't request more than 5 memes.")
         return
+
     selected_images = random.sample(images, k=min(number_of_memes, len(images)))
 
     for selected_image in selected_images:
@@ -72,25 +69,22 @@ async def meme(ctx, number_of_memes: int = 1):
         embed.set_image(url=f"attachment://{selected_image}")
         await ctx.channel.send(embed=embed, file=file)
 
-#coin section
+# Coin flip section
 @bot.command()
 async def coin(ctx, ip):
     ip = ip.lower()
     num = random.randint(1, 2)
     if num == 1 and ip == "head":
-        Head = discord.Embed(title="Correct, It’s Head!!!", color=0x80ff00)
-        await ctx.send(embed=Head)
+        await ctx.send(embed=discord.Embed(title="Correct, It’s Head!!!", color=0x80ff00))
     elif num == 2 and ip == "tail":
-        Tail = discord.Embed(title="Correct, It’s Tail!!!", color=0x80ff00)
-        await ctx.send(embed=Tail)
+        await ctx.send(embed=discord.Embed(title="Correct, It’s Tail!!!", color=0x80ff00))
     else:
-        Wrong = discord.Embed(title="It’s wrong! Are you smart?", color=0x80ff00)
-        await ctx.send(embed=Wrong)
+        await ctx.send(embed=discord.Embed(title="It’s wrong! Are you smart?", color=0x80ff00))
 
-#music section
-queue = []  # Queue to hold the song URLs
+# Music section
+queue = []
 
-# Check if the bot is connected to a voice channel
+# Check if bot is connected to a voice channel
 def is_connected(ctx):
     return ctx.voice_client is not None
 
@@ -108,15 +102,18 @@ async def play_song(ctx, url):
         'format': 'bestaudio',
         'noplaylist': 'True'
     }
+    
+    # Download song info from YouTube
+    with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+        info = ydl.extract_info(url, download=False)
+        url2 = info['formats'][0]['url']
+    
     ffmpeg_opts = {
         'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
         'options': '-vn'
     }
-
-    with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(url, download=False)
-        url2 = info['formats'][0]['url']
-
+    
+    # Play the song in the voice channel
     vc = ctx.voice_client
     vc.play(discord.FFmpegPCMAudio(url2, **ffmpeg_opts), after=lambda e: asyncio.run_coroutine_threadsafe(play_next_song(ctx), bot.loop))
 
@@ -127,7 +124,7 @@ def is_youtube_url(url):
         r'(watch\?v=|embed/|v/|.+\?v=)?([^&=%\?]{11})')
     return youtube_regex.match(url)
 
-# Join voice and play song immediately
+# Join voice channel and play song immediately
 @bot.command()
 async def p(ctx, url):
     if not is_youtube_url(url):
@@ -142,10 +139,10 @@ async def p(ctx, url):
     if not is_connected(ctx):
         await channel.connect()
 
-    queue.append(url)  # Add to queue
+    queue.append(url)  # Add song to the queue
     await ctx.send(f"Added to queue: {url}")
 
-    # Play the song if not already playing
+    # Play the song if nothing is currently playing
     if not ctx.voice_client.is_playing():
         await play_next_song(ctx)
 
@@ -161,7 +158,7 @@ async def skip(ctx):
     ctx.voice_client.stop()
     await ctx.send("Skipped the song!")
 
-# Stop the bot and disconnect from the voice channel
+# Stop and disconnect the bot
 @bot.command()
 async def stop(ctx):
     if not is_connected(ctx):
@@ -171,13 +168,15 @@ async def stop(ctx):
     await ctx.send("Stopping and leaving the voice channel.")
     await ctx.voice_client.disconnect()
 
-# Auto-disconnect when bot leaves voice
+# Auto disconnect when bot leaves voice channel
 @bot.event
 async def on_voice_state_update(member, before, after):
     if before.channel is not None and after.channel is None:
         if member == bot.user:
             await member.guild.voice_client.disconnect()
 
+# Server management
 server_on()
 
+# Start the bot
 bot.run(os.getenv('TOKEN'))
